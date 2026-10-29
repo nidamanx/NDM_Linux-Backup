@@ -1,0 +1,20 @@
+# Personal configuration: only the .example templates are versioned
+ndm_linux-backup.conf
+
+# Real credentials generated from the templates
+.my.cnf
+.pgpass
+
+# Default output of the script (archives, logs, checksums): the folder next to the script
+# is versioned (via .gitkeep), its contents are not
+/backup/*
+!/backup/.gitkeep
+
+# Editors, caches and OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

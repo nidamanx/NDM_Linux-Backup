@@ -1,0 +1,10 @@
+# NDM Linux Backup -- PostgreSQL credentials template
+# Full details: README "PostgreSQL backup"
+#
+# Path:    v_postgresql_pgpass_path (CONFIGURE), default ${HOME}/.pgpass (root's)
+# Setup:   sudo sh -c 'cp -n pgpass.example "${HOME}/.pgpass" && chmod 600 "${HOME}/.pgpass" && editor "${HOME}/.pgpass"'
+# Format:  hostname:port:database:username:password -- * = wildcard (any field but username)
+# Owner:   no chown needed -- read as plain data, never sourced/executed
+# Mode:    600 required -- PostgreSQL silently ignores this file otherwise
+
+localhost:5432:*:postgres:secret

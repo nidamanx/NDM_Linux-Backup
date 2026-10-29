@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Syntax
+        run: bash -n ndm_linux-backup.sh
+      - name: ShellCheck
+        run: shellcheck ndm_linux-backup.sh
+      - name: checkbashisms
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends devscripts >/dev/null
+          checkbashisms ndm_linux-backup.sh
+      - name: Version matches in every file
+        # APP_VERSION and APP_RELEASE_DATE are the reference; on a tag push the tag must match too.
+        run: |
+          set -u
+          ver=$(sed -n 's/^APP_VERSION="\(.*\)"$/\1/p' ndm_linux-backup.sh)
+          date=$(sed -n 's/^APP_RELEASE_DATE="\(.*\)"$/\1/p' ndm_linux-backup.sh)
+          echo "APP_VERSION=$ver APP_RELEASE_DATE=$date"
+          fail=0
+          expect() {  # file, what, found, wanted
+            if [[ $3 != "$4" ]]; then
+              echo "::error file=$1::$2 is '$3', expected '$4'"; fail=1
+            fi
+          }
+          for f in README.md README.it.md CITATION.cff CHANGELOG.md; do
+            [[ -f $f ]] || { echo "::error file=$f::$f is missing"; fail=1; }
+          done
+          for f in README.md README.it.md; do
+            [[ -f $f ]] || continue
+            expect "$f" "version badge" "$(sed -n 's/.*badge\/version-\([^-]*\)-informational.*/\1/p' "$f")" "$ver"
+            expect "$f" "sample output" "$(sed -n 's/^NDM Linux Backup \([^ ]*\) -- analysis for .*/\1/p' "$f")" "$ver"
+          done
+          if [[ -f CITATION.cff ]]; then
+            expect CITATION.cff "version" "$(sed -n 's/^version: "\(.*\)"$/\1/p' CITATION.cff)" "$ver"
+            expect CITATION.cff "date-released" "$(sed -n 's/^date-released: "\(.*\)"$/\1/p' CITATION.cff)" "$date"
+          fi
+          if [[ -f CHANGELOG.md ]]; then
+            expect CHANGELOG.md "latest release" "$(grep -m1 -E '^## \[[0-9]' CHANGELOG.md)" "## [$ver] - $date"
+          fi
+          if [[ $GITHUB_REF_TYPE == tag ]]; then
+            expect ndm_linux-backup.sh "tag" "$GITHUB_REF_NAME" "v$ver"
+          fi
+          exit "$fail"
+
+  smoke:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Version, help and usage
+        run: |
+          ./ndm_linux-backup.sh --version
+          ./ndm_linux-backup.sh --help > /dev/null
+          ./ndm_linux-backup.sh --usage
+          ./ndm_linux-backup.sh > /dev/null
+      - name: Requirements
+        run: ./ndm_linux-backup.sh --requirements
+      - name: Invalid usage exits with 2
+        run: |
+          for args in "--nope" "-x" "--start extra" "-q" "--secrets"; do
+            rc=0; ./ndm_linux-backup.sh $args || rc=$?
+            test "$rc" -eq 2 || { echo "::error::'$args' exited with $rc, expected 2"; exit 1; }
+          done
+      - name: --start without root exits with 1
+        run: |
+          rc=0; ./ndm_linux-backup.sh --start || rc=$?
+          test "$rc" -eq 1
+      - name: Invalid setting in the configuration file exits with 2
+        run: |
+          for line in 'v_enable_mysql=yes' 'v_unknown=1' 'v_dest=relative' 'v_retention_days=08' \
+                      'v_datetime_format=%Y/%m' 'a_luks=sda' 'v_hostname=$(id)' \
+                      'v_dest_rsync=-e' 'a_luks=( "../x" )'; do
+            printf '%s\n' "$line" > ndm_linux-backup.conf
+            rc=0; ./ndm_linux-backup.sh --start || rc=$?
+            test "$rc" -eq 2 || { echo "::error::'$line' exited with $rc, expected 2"; exit 1; }
+          done
+          rm -f ndm_linux-backup.conf
+      - name: The configuration file is read, never executed
+        run: |
+          {
+            echo "v_hostname=\$(touch $RUNNER_TEMP/pwned)"
+            echo "touch $RUNNER_TEMP/pwned"
+          } > ndm_linux-backup.conf
+          ./ndm_linux-backup.sh --requirements || true
+          printf '%s\n' "v_pre_command='touch $RUNNER_TEMP/pwned'" 'a_luks=( "sda"  # disk' '  "sdb" )' \
+            > ndm_linux-backup.conf
+          ./ndm_linux-backup.sh --requirements
+          rm -f ndm_linux-backup.conf
+          test ! -e "$RUNNER_TEMP/pwned"
+      - name: --analyze as root writes nothing
+        # A pure report: nothing is written into backup/ (only its .gitkeep) or the working directory.
+        run: |
+          sudo ./ndm_linux-backup.sh --analyze
+          test "$(ls -A backup)" = .gitkeep
+          test ! -e /home/ndm_linux-backup

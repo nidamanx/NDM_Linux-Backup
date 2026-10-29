@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "If you use this software, or parts of its code, please cite it as below."
+type: software
+title: "NDM Linux Backup"
+abstract: >-
+  A single Bash script for system backup and disaster recovery on Debian/GNU Linux. It
+  saves the parts of a machine that most backup tools leave out (hardware information,
+  UEFI/BIOS/MBR, partition tables, LUKS headers, LVM, installed packages, crontabs,
+  database schemas, Docker/Podman configuration) into a settings archive, with optional
+  separate data and secrets archives, GPG encryption and retention.
+authors:
+  - given-names: "Nicola Davide"
+    family-names: "Mannarelli"
+    alias: "nidamanx"
+repository-code: "https://github.com/nidamanx/NDM_Linux-Backup"
+url: "https://github.com/nidamanx/NDM_Linux-Backup"
+license: AGPL-3.0-or-later
+version: "3.0.0"
+date-released: "2026-10-29"
+keywords:
+  - bash
+  - cli
+  - backup
+  - system-backup
+  - disaster-recovery
+  - debian
+  - linux
+  - sysadmin
+  - luks
+  - lvm
+  - uefi
+  - mysql
+  - postgresql
+  - docker
+  - podman

@@ -1,0 +1,12 @@
+# NDM Linux Backup -- MySQL/MariaDB credentials template
+# Full details: README "MySQL/MariaDB backup"
+#
+# Path:    v_mysql_cnf_path (CONFIGURE), default ${HOME}/.my.cnf (root's)
+# Setup:   sudo sh -c 'cp -n my.cnf.example "${HOME}/.my.cnf" && chmod 600 "${HOME}/.my.cnf" && editor "${HOME}/.my.cnf"'
+# Section: [client] only -- mysql and mysqldump both read it, not [mysqldump]
+# Owner:   no chown needed -- read as plain data, never sourced/executed
+# Mode:    600 recommended -- plaintext password, group/other-readable only warns
+
+[client]
+user=mysqluser
+password=secret

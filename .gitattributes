@@ -1,0 +1,3 @@
+# Keep Linux line endings: Windows CRLF would break the script (bash: $'\r').
+* text=auto eol=lf
+*.sh text eol=lf

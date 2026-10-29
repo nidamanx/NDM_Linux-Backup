@@ -1,0 +1,42 @@
+# NDM Linux Backup -- settings file template (optional)
+# Full details: README "External settings file"
+#
+# Setup (as your own user, no sudo needed):
+#   cp -n ndm_linux-backup.conf.example ndm_linux-backup.conf
+#   editor ndm_linux-backup.conf
+#
+# The file must sit next to ndm_linux-backup.sh (its real location) and is
+# only read, never executed:
+#   - one KEY=value per line; # starts a comment;
+#   - quote values with spaces: v_dest="/mnt/my backups";
+#   - lists: KEY=( "a" "b" ), also over several lines;
+#   - values are literal: no $HOME, no $(commands). Write full paths.
+#     Only v_pre_command, v_post_command and v_on_failure_command may contain
+#     "$": they are commands, run later by the script (see README
+#     "Notifications").
+# An unknown setting or an invalid value stops the script (exit code 2) and
+# says which line is wrong.
+#
+# Every setting, with its default, is described in the CONFIGURE section of
+# ndm_linux-backup.sh: keep here only the lines you want to change.
+
+# --- Examples (all commented out; uncomment and adjust what you need) ---
+
+# v_enable_mysql=true
+# v_enable_postgresql=true
+
+# v_enable_secrets_backup=true
+
+# v_retention_days=30
+# v_retention_min_keep=3
+
+# v_enable_rsync=true
+# v_dest_rsync="/mnt/device/backup"
+
+# v_enable_gpg_settings=true
+# v_gpg_recipient_file="/root/pubkey.asc"
+
+# A list replaces the built-in one entirely:
+# a_source_extra=( "/root" "/etc" "/usr/local/bin" "/opt" "/srv" )
+
+# v_datetime_format='%Y%m%d-%H%M%S'
