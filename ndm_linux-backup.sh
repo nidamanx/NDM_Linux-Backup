@@ -358,7 +358,8 @@ v_gpg_recipient_file_secrets=""
 # /root: that needs a case-by-case decision, and blanket-including
 # ~/.ssh private keys is a bad idea.
 # Example: a_source_extra=( "/root" "/etc" "/usr/local/bin" )
-a_source_extra=( "/root" "/etc" "/usr/local/bin" "/opt" "/srv" "/usr/local/etc" "/var/spool/cron/crontabs" "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" )
+a_source_extra=( "/root" "/etc" "/usr/local/bin" "/opt" "/srv" "/usr/local/etc" \
+  "/var/spool/cron/crontabs" "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" )
 
 # Extra directories to search for AppImages, in addition to the built-in
 # defaults (/home, /root, /opt, /usr/local/bin)
@@ -1063,7 +1064,8 @@ readonly K_ALL_MODULES=(
   "v_enable_appimages" "v_enable_modified_files" "v_enable_unpackaged_files" "v_enable_cron" "v_enable_mysql" "v_enable_postgresql"
   "v_enable_docker" "v_enable_docker_compose" "v_enable_podman" "v_enable_source_extra"
   "v_enable_data_backup" "v_enable_docker_volumes_data" "v_enable_podman_volumes_data"
-  "v_enable_data_source_extra" "v_enable_secrets_backup" "v_enable_luks_header_backup" "v_enable_rsync" "v_enable_pre_command" "v_enable_post_command" "v_enable_on_failure_command"
+  "v_enable_data_source_extra" "v_enable_secrets_backup" "v_enable_luks_header_backup" \
+    "v_enable_rsync" "v_enable_pre_command" "v_enable_post_command" "v_enable_on_failure_command"
 )
 
 # The same modules as K_ALL_MODULES, split by which archive they belong
@@ -1339,7 +1341,9 @@ function f_print_encryption_status() {
     f_log_msg "Encryption: ENABLED for: ${a_gpg_encrypted[*]} -- the plaintext .tar.xz is deleted once the GPG-encrypted copy exists"
   fi
   if [[ "${#a_gpg_plain[@]}" -gt 0 ]]; then
-    printf "Encryption: disabled for: %s -- those archives stay plain, unencrypted .tar.xz. Set v_enable_gpg_settings/_data/_secrets=true in CONFIGURE or ndm_linux-backup.conf to enable (see Encryption in README).\n" "${a_gpg_plain[*]}" >&2
+    printf 'Encryption: disabled for: %s -- %s %s\n' "${a_gpg_plain[*]}" \
+      "those archives stay plain, unencrypted .tar.xz. Set v_enable_gpg_settings/_data/_secrets=true" \
+      "in CONFIGURE or ndm_linux-backup.conf to enable (see Encryption in README)." >&2
     f_log_msg "Encryption: disabled for: ${a_gpg_plain[*]} -- those archives stay plain, unencrypted .tar.xz"
   fi
 }
@@ -1383,10 +1387,17 @@ function f_check_dependencies() {
     else
       v_secrets_reason="the --secrets override for this run (v_enable_secrets_backup is false in the settings)"
     fi
-    printf "\nSecrets backup: ENABLED (%s) -- this run's secrets archive WILL contain cleartext private keys (SSH host, TLS) and password hashes (/etc/shadow); protect it at least as well as /root and /etc/shadow themselves.\n" "${v_secrets_reason}" >&2
-    f_log_msg "$(printf 'Secrets backup: ENABLED (%s) -- this run'\''s secrets archive WILL contain cleartext private keys (SSH host, TLS) and password hashes (/etc/shadow)' "${v_secrets_reason}")"
+    printf '\nSecrets backup: ENABLED (%s) -- %s %s\n' "${v_secrets_reason}" \
+      "this run's secrets archive WILL contain cleartext private keys (SSH host, TLS) and password" \
+      "hashes (/etc/shadow); protect it at least as well as /root and /etc/shadow themselves." >&2
+    f_log_msg "Secrets backup: ENABLED (${v_secrets_reason}) --" \
+      "this run's secrets archive WILL contain cleartext private keys (SSH host, TLS) and password" \
+      "hashes (/etc/shadow)"
   else
-    printf "\nSecrets backup: disabled -- no SSH/TLS private keys, /etc/shadow, or other credentials will be included in this run. Set v_enable_secrets_backup=true in CONFIGURE or ndm_linux-backup.conf, or pass --secrets for this run only, to include them.\n" >&2
+    printf '\n%s %s %s\n' \
+      "Secrets backup: disabled -- no SSH/TLS private keys, /etc/shadow, or other credentials will" \
+      "be included in this run. Set v_enable_secrets_backup=true in CONFIGURE or ndm_linux-backup.conf," \
+      "or pass --secrets for this run only, to include them." >&2
     f_log_msg "Secrets backup: disabled -- no SSH/TLS private keys, /etc/shadow, or other credentials were included in this run"
   fi
 
@@ -1394,14 +1405,19 @@ function f_check_dependencies() {
   # risk (defeats crypto-shredding on every disk in a_luks), worth its
   # own run-time reminder.
   if f_module_enabled "v_enable_luks_header_backup"; then
-    printf "\nLUKS header backup: ENABLED -- this run's secrets archive WILL contain a raw, restorable copy of every LUKS header in a_luks, which defeats crypto-shredding for anyone who also gets hold of it.\n" >&2
+    printf '\n%s %s\n' \
+      "LUKS header backup: ENABLED -- this run's secrets archive WILL contain a raw, restorable copy" \
+      "of every LUKS header in a_luks, which defeats crypto-shredding for anyone who also gets hold of it." >&2
     f_log_msg "LUKS header backup: ENABLED -- this run's secrets archive contains a raw, restorable copy of every LUKS header in a_luks"
   fi
 
   # Unconditional for the same reason: retention deletes old archives.
   if [[ "${v_retention_days}" -gt 0 ]]; then
-    printf "\nRetention: ENABLED -- archives older than %s day(s) will be deleted (keeping at least %s of each type regardless of age).\n" "${v_retention_days}" "${v_retention_min_keep}" >&2
-    f_log_msg "Retention: ENABLED -- archives older than ${v_retention_days} day(s) deleted (keeping at least ${v_retention_min_keep} of each type regardless of age)"
+    printf '\n%s %s\n' \
+      "Retention: ENABLED -- archives older than ${v_retention_days} day(s) will be deleted" \
+      "(keeping at least ${v_retention_min_keep} of each type regardless of age)." >&2
+    f_log_msg "Retention: ENABLED -- archives older than ${v_retention_days} day(s) deleted" \
+      "(keeping at least ${v_retention_min_keep} of each type regardless of age)"
   fi
 
   # Unconditional for the same reason: encryption status is safety-relevant.
@@ -1411,9 +1427,15 @@ function f_check_dependencies() {
   # means encryption was expected (older settings turned it on by setting
   # the key path alone): say so instead of silently writing plaintext.
   # Flagged only when the path was actually customized.
-  if [[ "${v_gpg_recipient_file}" != "${HOME}/pubkey.asc" ]] && [[ "${v_enable_gpg_settings}" != true ]] && [[ "${v_enable_gpg_data}" != true ]] && [[ "${v_enable_gpg_secrets}" != true ]]; then
-    printf "NOTICE: v_gpg_recipient_file is set to a custom path (%s) but no v_enable_gpg_settings/_data/_secrets switch is on, so nothing is actually being encrypted -- setting the recipient-file path alone does not turn encryption on. Set the matching v_enable_gpg_* switch(es) to true.\n" "${v_gpg_recipient_file}" >&2
-    f_log_msg "NOTICE: v_gpg_recipient_file is set to a custom path (${v_gpg_recipient_file}) but no v_enable_gpg_settings/_data/_secrets switch is on, so nothing is actually being encrypted"
+  if [[ "${v_gpg_recipient_file}" != "${HOME}/pubkey.asc" ]] \
+    && [[ "${v_enable_gpg_settings}" != true ]] && [[ "${v_enable_gpg_data}" != true ]] \
+    && [[ "${v_enable_gpg_secrets}" != true ]]; then
+    printf 'NOTICE: v_gpg_recipient_file is set to a custom path (%s) %s %s %s\n' "${v_gpg_recipient_file}" \
+      "but no v_enable_gpg_settings/_data/_secrets switch is on, so nothing is actually being encrypted" \
+      "-- setting the recipient-file path alone does not turn encryption on." \
+      "Set the matching v_enable_gpg_* switch(es) to true." >&2
+    f_log_msg "NOTICE: v_gpg_recipient_file is set to a custom path (${v_gpg_recipient_file})" \
+      "but no v_enable_gpg_settings/_data/_secrets switch is on, so nothing is actually being encrypted"
   fi
 
   # Pad the tags to a fixed width before adding color codes: printf's
@@ -1469,8 +1491,12 @@ function f_check_dependencies() {
   fi
 
   if [[ "${v_dry_run}" == true ]] || [[ "${v_quiet}" == true ]]; then
-    printf "\nMissing packages: %s (dependency check skipped in --dry-run/--quiet: a normal run always asks before installing anything, never installs on its own)\n" "${a_missing_all_packages[*]}" >&2
-    f_log_msg "Missing packages: ${a_missing_all_packages[*]} (dependency check skipped in --dry-run/--quiet: a normal run always asks before installing anything, never installs on its own)"
+    printf '\nMissing packages: %s %s %s\n' "${a_missing_all_packages[*]}" \
+      "(dependency check skipped in --dry-run/--quiet: a normal run always asks before installing" \
+      "anything, never installs on its own)" >&2
+    f_log_msg "Missing packages: ${a_missing_all_packages[*]}" \
+      "(dependency check skipped in --dry-run/--quiet: a normal run always asks before installing" \
+      "anything, never installs on its own)"
     return
   fi
 
@@ -1537,7 +1563,8 @@ function f_check_db_credentials() {
 
   local -a a_missing=()
 
-  if [[ "${v_enable_mysql}" == true ]] && [[ "$(command -v mysqldump)" ]] && [[ ! -f "${v_mysql_cnf_path}" ]] && [[ "${v_mysql_socket_auth}" != true ]]; then
+  if [[ "${v_enable_mysql}" == true ]] && [[ "$(command -v mysqldump)" ]] \
+    && [[ ! -f "${v_mysql_cnf_path}" ]] && [[ "${v_mysql_socket_auth}" != true ]]; then
     a_missing+=("$(cat <<EOF
 MySQL/MariaDB: credentials file not found at ${v_mysql_cnf_path}, and root@localhost socket auth is not available either
   1. Copy the template: sudo cp -n "${v_script_dir}/my.cnf.example" "${v_mysql_cnf_path}"
@@ -1550,7 +1577,8 @@ EOF
 )")
   fi
 
-  if [[ "${v_enable_postgresql}" == true ]] && [[ "$(command -v pg_dump)" ]] && [[ ! -f "${v_postgresql_pgpass_path}" ]] && [[ "${v_postgresql_peer_auth}" != true ]]; then
+  if [[ "${v_enable_postgresql}" == true ]] && [[ "$(command -v pg_dump)" ]] \
+    && [[ ! -f "${v_postgresql_pgpass_path}" ]] && [[ "${v_postgresql_peer_auth}" != true ]]; then
     a_missing+=("$(cat <<EOF
 PostgreSQL: credentials file not found at ${v_postgresql_pgpass_path}, and local peer/ident auth is not available either
   1. Copy the template: sudo cp -n "${v_script_dir}/pgpass.example" "${v_postgresql_pgpass_path}"
@@ -1582,14 +1610,18 @@ EOF
   if [[ "${v_enable_mysql}" == true ]] && [[ "$(command -v mysqldump)" ]] && [[ -f "${v_mysql_cnf_path}" ]]; then
     v_cred_mode="$(stat -c '%a' "${v_mysql_cnf_path}")"
     if (( (10#${v_cred_mode: -2:1} & 4) != 0 )) || (( (10#${v_cred_mode: -1} & 4) != 0 )); then
-      printf "\nWARNING: %s is readable by group/other (mode %s) -- it contains a plaintext MySQL/MariaDB password. chmod 600 it.\n" "${v_mysql_cnf_path}" "${v_cred_mode}" >&2
+      printf '\nWARNING: %s is readable by group/other (mode %s) -- %s\n' \
+        "${v_mysql_cnf_path}" "${v_cred_mode}" \
+        "it contains a plaintext MySQL/MariaDB password. chmod 600 it." >&2
       f_log_msg "WARNING: ${v_mysql_cnf_path} is readable by group/other (mode ${v_cred_mode}) -- it contains a plaintext MySQL/MariaDB password"
     fi
   fi
   if [[ "${v_enable_postgresql}" == true ]] && [[ "$(command -v pg_dump)" ]] && [[ -f "${v_postgresql_pgpass_path}" ]]; then
     v_cred_mode="$(stat -c '%a' "${v_postgresql_pgpass_path}")"
     if (( (10#${v_cred_mode: -2:1} & 4) != 0 )) || (( (10#${v_cred_mode: -1} & 4) != 0 )); then
-      printf "\nWARNING: %s is readable by group/other (mode %s) -- it contains a plaintext PostgreSQL password. chmod 600 it.\n" "${v_postgresql_pgpass_path}" "${v_cred_mode}" >&2
+      printf '\nWARNING: %s is readable by group/other (mode %s) -- %s\n' \
+        "${v_postgresql_pgpass_path}" "${v_cred_mode}" \
+        "it contains a plaintext PostgreSQL password. chmod 600 it." >&2
       f_log_msg "WARNING: ${v_postgresql_pgpass_path} is readable by group/other (mode ${v_cred_mode}) -- it contains a plaintext PostgreSQL password"
     fi
   fi
@@ -1624,9 +1656,13 @@ function f_check_source_overlap() {
     if [[ "${v_real_dir}" == "${v_real_extra}" ]] \
       || [[ "${v_real_dir}" == "${v_real_extra}"/* ]] \
       || [[ "${v_real_extra}" == "${v_real_dir}"/* ]]; then
-      printf "\nWARNING: %s (%s) overlaps with %s entry %s -- its content will be duplicated in the archive (or dropped from its own direct inclusion, if you exclude the overlap instead). Move %s outside every %s path.\n" \
-        "${v_dir_label}" "${v_real_dir}" "${v_extra_label}" "${i}" "${v_dir_label}" "${v_extra_label}" >&2
-      f_log_msg "WARNING: ${v_dir_label} (${v_real_dir}) overlaps with ${v_extra_label} entry ${i} -- its content will be duplicated in the archive"
+      printf '\nWARNING: %s (%s) overlaps with %s entry %s -- %s %s %s\n' \
+        "${v_dir_label}" "${v_real_dir}" "${v_extra_label}" "${i}" \
+        "its content will be duplicated in the archive (or dropped from its own direct inclusion," \
+        "if you exclude the overlap instead)." \
+        "Move ${v_dir_label} outside every ${v_extra_label} path." >&2
+      f_log_msg "WARNING: ${v_dir_label} (${v_real_dir}) overlaps with ${v_extra_label} entry ${i}" \
+        "-- its content will be duplicated in the archive"
     fi
   done
 }
@@ -1653,8 +1689,13 @@ function f_check_dest_overlap() {
   [[ -n "${v_real_dest}" ]] || v_real_dest="${v_dest_path}"
 
   if [[ "${v_real_tempdir}" == "${v_real_dest}" ]] || [[ "${v_real_tempdir}" == "${v_real_dest}"/* ]]; then
-    printf "\n%s: v_tempdir (%s) is the same as, or nested under, its own v_dest (%s). The ENDING tar step excludes v_dest from the archive so it doesn't swallow itself -- since v_tempdir sits inside that excluded tree, the archive would be produced empty, silently (exit 0, \"All done\"). Move v_tempdir outside v_dest and re-run.\n\n" "${v_label}" "${v_tempdir_path}" "${v_dest_path}" >&2
-    f_log_msg "SECURITY: ${v_label}: v_tempdir (${v_tempdir_path}) is the same as, or nested under, its own v_dest (${v_dest_path}) -- refusing to run, the archive would come out silently empty"
+    printf '\n%s: v_tempdir (%s) is the same as, or nested under, its own v_dest (%s). %s %s %s\n\n' \
+        "${v_label}" "${v_tempdir_path}" "${v_dest_path}" \
+        "The ENDING tar step excludes v_dest from the archive so it doesn't swallow itself --" \
+        "since v_tempdir sits inside that excluded tree, the archive would be produced empty, silently" \
+        "(exit 0, \"All done\"). Move v_tempdir outside v_dest and re-run." >&2
+    f_log_msg "SECURITY: ${v_label}: v_tempdir (${v_tempdir_path}) is the same as, or nested under," \
+      "its own v_dest (${v_dest_path}) -- refusing to run, the archive would come out silently empty"
     exit 1
   fi
 }
@@ -1680,7 +1721,8 @@ EOF
 )")
   fi
 
-  if [[ "${v_enable_gpg_data}" == true ]] && [[ "${v_enable_data_backup}" == true ]] && { [[ -z "${v_gpg_recipient_file_data}" ]] || [[ ! -f "${v_gpg_recipient_file_data}" ]]; }; then
+  if [[ "${v_enable_gpg_data}" == true ]] && [[ "${v_enable_data_backup}" == true ]] \
+    && { [[ -z "${v_gpg_recipient_file_data}" ]] || [[ ! -f "${v_gpg_recipient_file_data}" ]]; }; then
     a_missing+=("$(cat <<EOF
 GPG encryption (data archive): recipient public key not found${v_gpg_recipient_file_data:+ at ${v_gpg_recipient_file_data}}
   No GPG keypair yet? Create one: gpg --full-generate-key
@@ -1693,7 +1735,8 @@ EOF
 )")
   fi
 
-  if [[ "${v_enable_gpg_secrets}" == true ]] && [[ "${v_secrets_active}" == true ]] && { [[ -z "${v_gpg_recipient_file_secrets}" ]] || [[ ! -f "${v_gpg_recipient_file_secrets}" ]]; }; then
+  if [[ "${v_enable_gpg_secrets}" == true ]] && [[ "${v_secrets_active}" == true ]] \
+    && { [[ -z "${v_gpg_recipient_file_secrets}" ]] || [[ ! -f "${v_gpg_recipient_file_secrets}" ]]; }; then
     a_missing+=("$(cat <<EOF
 GPG encryption (secrets archive): recipient public key not found${v_gpg_recipient_file_secrets:+ at ${v_gpg_recipient_file_secrets}}
   No GPG keypair yet? Create one: gpg --full-generate-key
@@ -1743,7 +1786,11 @@ function f_analyze_reason() {
       ;;
     v_enable_luks_header_backup)
       [[ "${#a_luks[@]}" != 0 ]] || { printf 'no LUKS partitions found'; return; }
-      [[ "${v_secrets_active}" == true ]] || { printf 'v_enable_secrets_backup=false and no --secrets -- the whole secrets archive is off, turn it on first (or pass --secrets)'; return; }
+      [[ "${v_secrets_active}" == true ]] || {
+        printf '%s %s' "v_enable_secrets_backup=false and no --secrets --" \
+          "the whole secrets archive is off, turn it on first (or pass --secrets)"
+        return
+      }
       ;;
     v_enable_lvm)
       [[ "${v_lvm_present}" == true ]] || { printf 'no LVM volumes detected'; return; }
@@ -1771,10 +1818,20 @@ function f_analyze_reason() {
 
   case "${v_module}" in
     v_enable_mysql)
-      [[ -f "${v_mysql_cnf_path}" ]] || [[ "${v_mysql_socket_auth}" == true ]] || { printf 'credentials file not found at %s -- root@localhost socket auth not probed by --analyze (read-only, no live connection attempted), a real run may still succeed via it, see README' "${v_mysql_cnf_path}"; return; }
+      [[ -f "${v_mysql_cnf_path}" ]] || [[ "${v_mysql_socket_auth}" == true ]] || {
+        printf 'credentials file not found at %s -- %s %s' "${v_mysql_cnf_path}" \
+          "root@localhost socket auth not probed by --analyze (read-only, no live connection attempted)," \
+          "a real run may still succeed via it, see README"
+        return
+      }
       ;;
     v_enable_postgresql)
-      [[ -f "${v_postgresql_pgpass_path}" ]] || [[ "${v_postgresql_peer_auth}" == true ]] || { printf 'credentials file not found at %s -- peer/ident auth not probed by --analyze (read-only, no live connection attempted), a real run may still succeed via it, see README' "${v_postgresql_pgpass_path}"; return; }
+      [[ -f "${v_postgresql_pgpass_path}" ]] || [[ "${v_postgresql_peer_auth}" == true ]] || {
+        printf 'credentials file not found at %s -- %s %s' "${v_postgresql_pgpass_path}" \
+          "peer/ident auth not probed by --analyze (read-only, no live connection attempted)," \
+          "a real run may still succeed via it, see README"
+        return
+      }
       ;;
     v_enable_podman|v_enable_podman_volumes_data)
       if [[ "${v_podman_user}" != 'root' ]] && ! command -v sudo >/dev/null 2>&1; then
@@ -1954,7 +2011,8 @@ function f_analyze_report() {
 # runtime directory set up, so a rootless user's containers/images are
 # visible even when this script itself runs as root. When v_podman_user
 # is "root", runs podman directly (root's own, usually rootful, state).
-# shellcheck disable=SC2317,SC2329 # called indirectly as "${v_runtime}" from f_container_metadata/f_container_volumes_data, not by a literal call site
+# Called indirectly as "${v_runtime}" from f_container_metadata/f_container_volumes_data.
+# shellcheck disable=SC2317,SC2329 # no literal call site
 function f_podman() {
   if [[ "${v_podman_user}" == 'root' ]]; then
     podman "${@}"
@@ -2121,7 +2179,8 @@ function f_prune_old_archives() {
   # -name clauses (plain + .gpg) so a mixed pre/post-encryption history
   # is still counted correctly, and the .sha256 sidecar is never
   # mistaken for an archive of its own.
-  mapfile -t a_candidates < <(find "${v_dir}" -maxdepth 1 \( -name "${v_prefix}_*.tar.xz" -o -name "${v_prefix}_*.tar.xz.gpg" \) -printf '%T@ %p\n' 2>/dev/null | sort -rn | cut -d' ' -f2-)
+  mapfile -t a_candidates < <(find "${v_dir}" -maxdepth 1 \( -name "${v_prefix}_*.tar.xz" -o \
+    -name "${v_prefix}_*.tar.xz.gpg" \) -printf '%T@ %p\n' 2>/dev/null | sort -rn | cut -d' ' -f2-)
 
   for i in "${a_candidates[@]}"; do
     v_count=$((v_count + 1))
@@ -2163,14 +2222,18 @@ function f_encrypt_archive() {
 
   f_check_command "gpg"
   f_assert_within_whitelist "${v_dir}/${v_ref_filename}.gpg"
-  if v_gpg_err=$(gpg --batch --yes --output "${v_dir}/${v_ref_filename}.gpg" --encrypt --recipient-file "${v_recipient_file}" "${v_dir}/${v_ref_filename}" 2>&1 >/dev/null); then
+  if v_gpg_err=$(gpg --batch --yes --output "${v_dir}/${v_ref_filename}.gpg" --encrypt \
+    --recipient-file "${v_recipient_file}" "${v_dir}/${v_ref_filename}" 2>&1 >/dev/null); then
     f_assert_within_whitelist "${v_dir}/${v_ref_filename}"
     rm -f "${v_dir}/${v_ref_filename}"
     v_ref_filename="${v_ref_filename}.gpg"
     f_print_msg "Archive encrypted: ${v_ref_filename}"
   else
-    printf "\nFailed to encrypt archive %s:\n%s\n\nThe plaintext archive was NOT deleted and still exists, unencrypted, at %s/%s -- secure or remove it manually.\n\n" "${v_ref_filename}" "${v_gpg_err}" "${v_dir}" "${v_ref_filename}" >&2
-    f_log_msg "Failed to encrypt archive ${v_ref_filename}: ${v_gpg_err} -- plaintext archive left in place, unencrypted, at ${v_dir}/${v_ref_filename}"
+    printf '\nFailed to encrypt archive %s:\n%s\n\n%s %s -- %s\n\n' "${v_ref_filename}" "${v_gpg_err}" \
+      "The plaintext archive was NOT deleted and still exists, unencrypted, at" \
+      "${v_dir}/${v_ref_filename}" "secure or remove it manually." >&2
+    f_log_msg "Failed to encrypt archive ${v_ref_filename}: ${v_gpg_err} --" \
+      "plaintext archive left in place, unencrypted, at ${v_dir}/${v_ref_filename}"
     exit 1
   fi
 }
@@ -2291,14 +2354,14 @@ function f_ask_confirmation() {
 # afterward (mysqldump, docker, tar, lvm tools...), and some warn about it.
 function f_log_msg() {
   if [[ -n "${v_log_path:-}" ]]; then
-    printf '%s\n' "${1}" | sed -E 's/\x1b\[[0-9;]*m//g' >> "${v_log_path}"
+    printf '%s\n' "${*}" | sed -E 's/\x1b\[[0-9;]*m//g' >> "${v_log_path}"
   fi
 }
 
 function f_print_msg() {
-  f_log_msg "${1}"
+  f_log_msg "${*}"
   if [[ "${v_quiet}" == false ]]; then
-    printf "%s\n" "${1}"
+    printf "%s\n" "${*}"
   fi
 }
 
@@ -2978,7 +3041,8 @@ function main() {
     f_print_msg $'\nBacking up AppImages list'
     v_temp_path="${v_tempdir}"/appimages.txt
     if [[ ! -f "${v_temp_path}" ]]; then
-      find /home /root /opt /usr/local/bin "${a_appimages_extra_paths[@]}" -maxdepth 6 -iname '*.appimage' -type f -printf '%s\t%p\n' 2>/dev/null | f_out "${v_temp_path}"
+      find /home /root /opt /usr/local/bin "${a_appimages_extra_paths[@]}" -maxdepth 6 \
+        -iname '*.appimage' -type f -printf '%s\t%p\n' 2>/dev/null | f_out "${v_temp_path}"
       f_check_pipe "find (AppImages)" "${v_temp_path}"
       f_backup_done_msg "${v_temp_path}"
     else
@@ -3069,13 +3133,15 @@ function main() {
   if [[ "${v_enable_mysql}" == true ]]; then
     f_print_msg $'\nBacking up MySQL/MariaDB schema'
     v_temp_path="${v_tempdir}"/mysql_schema
-    if [[ "$(command -v mysqldump)" ]] && [[ ! -d "${v_temp_path}" ]] && { [[ -f "${v_mysql_cnf_path}" ]] || [[ "${v_mysql_socket_auth}" == true ]]; }; then
+    if [[ "$(command -v mysqldump)" ]] && [[ ! -d "${v_temp_path}" ]] \
+      && { [[ -f "${v_mysql_cnf_path}" ]] || [[ "${v_mysql_socket_auth}" == true ]]; }; then
       f_mkdir "${v_temp_path}"
       if [[ "${v_mysql_single_dump}" == false ]]; then
         # Database listing is read-only: run for real even in dry-run.
         # sys excluded too: diagnostic schema with no data of its own,
         # its views need near-root privileges to dump cleanly.
-        mapfile -t a_databases < <(mysql "${a_mysql_defaults[@]}" -e "SHOW DATABASES;" | grep -Ev '^(Database|information_schema|performance_schema|sys)$')
+        mapfile -t a_databases < <(mysql "${a_mysql_defaults[@]}" -e "SHOW DATABASES;" \
+          | grep -Ev '^(Database|information_schema|performance_schema|sys)$')
         for v_db in "${a_databases[@]}"; do
           if [[ "${v_dry_run}" == true ]]; then
             f_print_msg "[DRY-RUN] would dump schema of ${v_db} to ${v_temp_path}/schema_${v_db}.sql"
@@ -3104,7 +3170,8 @@ function main() {
   if [[ "${v_enable_postgresql}" == true ]]; then
     f_print_msg $'\nBacking up PostgreSQL schema'
     v_temp_path="${v_tempdir}"/postgresql_schema
-    if [[ "$(command -v pg_dump)" ]] && [[ ! -d "${v_temp_path}" ]] && { [[ -f "${v_postgresql_pgpass_path}" ]] || [[ "${v_postgresql_peer_auth}" == true ]]; }; then
+    if [[ "$(command -v pg_dump)" ]] && [[ ! -d "${v_temp_path}" ]] \
+      && { [[ -f "${v_postgresql_pgpass_path}" ]] || [[ "${v_postgresql_peer_auth}" == true ]]; }; then
       f_mkdir "${v_temp_path}"
       if [[ "${v_postgresql_single_dump}" == false ]]; then
         # Database listing is read-only: run for real even in dry-run.
@@ -3112,7 +3179,9 @@ function main() {
         # main(). Exit status is checked and hard-exits on failure: an
         # empty a_pg_databases here would otherwise silently produce a
         # schema dump missing every database, reported as "done".
-        if ! v_pg_databases_raw=$(PGPASSFILE="${v_postgresql_pgpass_path}" psql -U "${v_postgresql_user}" -w -d postgres "${a_pg_host[@]}" -Atc "SELECT datname FROM pg_database WHERE datistemplate = false;" 2>&1); then
+        if ! v_pg_databases_raw=$(PGPASSFILE="${v_postgresql_pgpass_path}" psql \
+          -U "${v_postgresql_user}" -w -d postgres "${a_pg_host[@]}" \
+          -Atc "SELECT datname FROM pg_database WHERE datistemplate = false;" 2>&1); then
           printf "\nFailed to list PostgreSQL databases:\n%s\n\n" "${v_pg_databases_raw}" >&2
           f_log_msg "Failed to list PostgreSQL databases: ${v_pg_databases_raw}"
           exit 1
@@ -3135,7 +3204,9 @@ function main() {
             # still surfaced loudly instead of a silent "done". "2>&1
             # >file" captures only stderr into v_pg_dump_err, dump content
             # still goes straight to the file.
-            if ! v_pg_dump_err=$(PGPASSFILE="${v_postgresql_pgpass_path}" pg_dump -U "${v_postgresql_user}" -w "${a_pg_host[@]}" --schema-only "${v_db}" 2>&1 >"${v_temp_path}/schema_${v_db}.sql"); then
+            if ! v_pg_dump_err=$(PGPASSFILE="${v_postgresql_pgpass_path}" pg_dump \
+              -U "${v_postgresql_user}" -w "${a_pg_host[@]}" --schema-only "${v_db}" \
+              2>&1 >"${v_temp_path}/schema_${v_db}.sql"); then
               printf "\nWARNING: pg_dump failed for database %s (schema):\n%s\n" "${v_db}" "${v_pg_dump_err}" >&2
               f_log_msg "WARNING: pg_dump failed for database ${v_db} (schema): ${v_pg_dump_err}"
             fi
@@ -3145,7 +3216,8 @@ function main() {
         if [[ "${v_dry_run}" == true ]]; then
           f_print_msg "[DRY-RUN] would dump all schemas to ${v_temp_path}/schema_all.sql"
         else
-          PGPASSFILE="${v_postgresql_pgpass_path}" pg_dumpall -U "${v_postgresql_user}" -w "${a_pg_host[@]}" --schema-only > "${v_temp_path}/schema_all.sql"
+          PGPASSFILE="${v_postgresql_pgpass_path}" pg_dumpall -U "${v_postgresql_user}" \
+            -w "${a_pg_host[@]}" --schema-only > "${v_temp_path}/schema_all.sql"
         fi
       fi
       f_backup_done_msg "${v_temp_path}"
@@ -3184,7 +3256,9 @@ function main() {
       while IFS= read -r v_file; do
         f_mkdir "${v_temp_path}$(dirname "${v_file}")"
         f_copy "${v_file}" "${v_temp_path}${v_file}"
-      done < <(find /home /root /opt /srv "${a_docker_compose_extra_paths[@]}" -maxdepth 6 \( -iname 'docker-compose*.yml' -o -iname 'docker-compose*.yaml' -o -iname 'compose.yml' -o -iname 'compose.yaml' \) -type f 2>/dev/null)
+      done < <(find /home /root /opt /srv "${a_docker_compose_extra_paths[@]}" -maxdepth 6 \( \
+        -iname 'docker-compose*.yml' -o -iname 'docker-compose*.yaml' -o -iname 'compose.yml' -o \
+        -iname 'compose.yaml' \) -type f 2>/dev/null)
       f_backup_done_msg "${v_temp_path}"
     else
       f_backup_skipped_msg "${v_temp_path}"
@@ -3229,7 +3303,8 @@ function main() {
     if [[ "${v_enable_mysql}" == true ]]; then
       f_print_msg $'\nBacking up MySQL/MariaDB data'
       v_temp_path="${v_tempdir_data}"/mysql
-      if [[ "$(command -v mysqldump)" ]] && [[ ! -d "${v_temp_path}" ]] && { [[ -f "${v_mysql_cnf_path}" ]] || [[ "${v_mysql_socket_auth}" == true ]]; }; then
+      if [[ "$(command -v mysqldump)" ]] && [[ ! -d "${v_temp_path}" ]] \
+        && { [[ -f "${v_mysql_cnf_path}" ]] || [[ "${v_mysql_socket_auth}" == true ]]; }; then
         f_mkdir "${v_temp_path}"
         if [[ "${v_mysql_single_dump}" == false ]]; then
           # Reuse the database list already fetched in the schema pass
@@ -3237,7 +3312,8 @@ function main() {
           # skipped this run (e.g. resuming where mysql_schema/ already
           # existed from a previous run).
           if [[ "${#a_databases[@]}" -eq 0 ]]; then
-            mapfile -t a_databases < <(mysql "${a_mysql_defaults[@]}" -e "SHOW DATABASES;" | grep -Ev '^(Database|information_schema|performance_schema|sys)$')
+            mapfile -t a_databases < <(mysql "${a_mysql_defaults[@]}" -e "SHOW DATABASES;" \
+              | grep -Ev '^(Database|information_schema|performance_schema|sys)$')
           fi
           for v_db in "${a_databases[@]}"; do
             if [[ "${v_dry_run}" == true ]]; then
@@ -3265,14 +3341,17 @@ function main() {
     if [[ "${v_enable_postgresql}" == true ]]; then
       f_print_msg $'\nBacking up PostgreSQL data'
       v_temp_path="${v_tempdir_data}"/postgresql
-      if [[ "$(command -v pg_dump)" ]] && [[ ! -d "${v_temp_path}" ]] && { [[ -f "${v_postgresql_pgpass_path}" ]] || [[ "${v_postgresql_peer_auth}" == true ]]; }; then
+      if [[ "$(command -v pg_dump)" ]] && [[ ! -d "${v_temp_path}" ]] \
+        && { [[ -f "${v_postgresql_pgpass_path}" ]] || [[ "${v_postgresql_peer_auth}" == true ]]; }; then
         f_mkdir "${v_temp_path}"
         if [[ "${v_postgresql_single_dump}" == false ]]; then
           # Same reuse-if-already-fetched reasoning as the MySQL data
           # block above; same -d postgres / exit-status-checked / empty-
           # array handling as the schema pass above.
           if [[ "${#a_pg_databases[@]}" -eq 0 ]]; then
-            if ! v_pg_databases_raw=$(PGPASSFILE="${v_postgresql_pgpass_path}" psql -U "${v_postgresql_user}" -w -d postgres "${a_pg_host[@]}" -Atc "SELECT datname FROM pg_database WHERE datistemplate = false;" 2>&1); then
+            if ! v_pg_databases_raw=$(PGPASSFILE="${v_postgresql_pgpass_path}" psql \
+              -U "${v_postgresql_user}" -w -d postgres "${a_pg_host[@]}" \
+              -Atc "SELECT datname FROM pg_database WHERE datistemplate = false;" 2>&1); then
               printf "\nFailed to list PostgreSQL databases:\n%s\n\n" "${v_pg_databases_raw}" >&2
               f_log_msg "Failed to list PostgreSQL databases: ${v_pg_databases_raw}"
               exit 1
@@ -3290,7 +3369,9 @@ function main() {
               # Same reasoning as the schema pass above: one database's
               # failure is surfaced, not silently swallowed, without
               # aborting the rest of the loop.
-              if ! v_pg_dump_err=$(PGPASSFILE="${v_postgresql_pgpass_path}" pg_dump -U "${v_postgresql_user}" -w "${a_pg_host[@]}" --data-only "${v_db}" 2>&1 >"${v_temp_path}/data_${v_db}.sql"); then
+              if ! v_pg_dump_err=$(PGPASSFILE="${v_postgresql_pgpass_path}" pg_dump \
+                -U "${v_postgresql_user}" -w "${a_pg_host[@]}" --data-only "${v_db}" \
+                2>&1 >"${v_temp_path}/data_${v_db}.sql"); then
                 printf "\nWARNING: pg_dump failed for database %s (data):\n%s\n" "${v_db}" "${v_pg_dump_err}" >&2
                 f_log_msg "WARNING: pg_dump failed for database ${v_db} (data): ${v_pg_dump_err}"
               fi
@@ -3300,7 +3381,8 @@ function main() {
           if [[ "${v_dry_run}" == true ]]; then
             f_print_msg "[DRY-RUN] would dump all data to ${v_temp_path}/data_all.sql"
           else
-            PGPASSFILE="${v_postgresql_pgpass_path}" pg_dumpall -U "${v_postgresql_user}" -w "${a_pg_host[@]}" --data-only > "${v_temp_path}/data_all.sql"
+            PGPASSFILE="${v_postgresql_pgpass_path}" pg_dumpall -U "${v_postgresql_user}" \
+              -w "${a_pg_host[@]}" --data-only > "${v_temp_path}/data_all.sql"
           fi
         fi
         f_backup_done_msg "${v_temp_path}"
@@ -3442,7 +3524,12 @@ function main() {
       # before stdout is separately discarded): a failure otherwise gave
       # no indication at all of why (permission denied, disk full...).
       f_assert_within_whitelist "${v_dest}/${v_filename}"
-      if v_tar_err=$(tar --acls --xattrs --transform="s,^,${v_filename%.tar.xz}/," -cpJf "${v_dest}/${v_filename}" --exclude="${v_dest}" --exclude="${v_mysql_cnf_path}" --exclude="${v_postgresql_pgpass_path}" --exclude="${v_tempdir_secrets}" --exclude="${v_dest_secrets}" --exclude='.git' "${a_secrets_exclude_args[@]}" "${v_tempdir}" "${a_tar_extra_sources[@]}" 2>&1 >/dev/null); then
+      if v_tar_err=$(tar --acls --xattrs --transform="s,^,${v_filename%.tar.xz}/," \
+        -cpJf "${v_dest}/${v_filename}" --exclude="${v_dest}" --exclude="${v_mysql_cnf_path}" \
+        --exclude="${v_postgresql_pgpass_path}" --exclude="${v_tempdir_secrets}" \
+        --exclude="${v_dest_secrets}" \
+        --exclude='.git' "${a_secrets_exclude_args[@]}" "${v_tempdir}" "${a_tar_extra_sources[@]}" \
+        2>&1 >/dev/null); then
         f_encrypt_archive v_filename "${v_dest}" "${v_gpg_recipient_file}" "${v_enable_gpg_settings}"
         f_assert_within_whitelist "${v_dest}/${v_filename}"
         chmod 600 "${v_dest}/${v_filename}"
@@ -3502,7 +3589,12 @@ function main() {
           a_secrets_exclude_args+=(--exclude="${i}")
         done
         f_assert_within_whitelist "${v_dest_data}/${v_filename_data}"
-        if v_tar_err=$(tar --acls --xattrs --transform="s,^,${v_filename_data%.tar.xz}/," -cpJf "${v_dest_data}/${v_filename_data}" --exclude="${v_dest_data}" --exclude="${v_mysql_cnf_path}" --exclude="${v_postgresql_pgpass_path}" --exclude="${v_tempdir_secrets}" --exclude="${v_dest_secrets}" "${a_secrets_exclude_args[@]}" "${v_tempdir_data}" "${a_tar_extra_data_sources[@]}" 2>&1 >/dev/null); then
+        if v_tar_err=$(tar --acls --xattrs --transform="s,^,${v_filename_data%.tar.xz}/," \
+          -cpJf "${v_dest_data}/${v_filename_data}" --exclude="${v_dest_data}" \
+          --exclude="${v_mysql_cnf_path}" --exclude="${v_postgresql_pgpass_path}" \
+          --exclude="${v_tempdir_secrets}" \
+          --exclude="${v_dest_secrets}" "${a_secrets_exclude_args[@]}" "${v_tempdir_data}" \
+          "${a_tar_extra_data_sources[@]}" 2>&1 >/dev/null); then
           f_encrypt_archive v_filename_data "${v_dest_data}" "${v_gpg_recipient_file_data}" "${v_enable_gpg_data}"
           f_assert_within_whitelist "${v_dest_data}/${v_filename_data}"
           chmod 600 "${v_dest_data}/${v_filename_data}"
@@ -3551,7 +3643,9 @@ function main() {
       else
         f_print_msg $'\nCreating secrets TAR archive'
         f_assert_within_whitelist "${v_dest_secrets}/${v_filename_secrets}"
-        if v_tar_err=$(tar --acls --xattrs --transform="s,^,${v_filename_secrets%.tar.xz}/," -cpJf "${v_dest_secrets}/${v_filename_secrets}" --exclude="${v_dest_secrets}" "${v_tempdir_secrets}" 2>&1 >/dev/null); then
+        if v_tar_err=$(tar --acls --xattrs --transform="s,^,${v_filename_secrets%.tar.xz}/," \
+          -cpJf "${v_dest_secrets}/${v_filename_secrets}" \
+          --exclude="${v_dest_secrets}" "${v_tempdir_secrets}" 2>&1 >/dev/null); then
           f_encrypt_archive v_filename_secrets "${v_dest_secrets}" "${v_gpg_recipient_file_secrets}" "${v_enable_gpg_secrets}"
           f_assert_within_whitelist "${v_dest_secrets}/${v_filename_secrets}"
           chmod 600 "${v_dest_secrets}/${v_filename_secrets}"
