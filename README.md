@@ -4,7 +4,7 @@
 
 [![License: AGPL
 v3+](https://img.shields.io/badge/License-AGPL_v3%2B-blue.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-3.0.0-informational)
+![Version](https://img.shields.io/badge/version-3.0.1-informational)
 ![Shell](https://img.shields.io/badge/shell-bash-4EAA25)
 
 **NDM Linux Backup** is a system backup and disaster recovery tool for Debian/GNU Linux
@@ -1076,7 +1076,7 @@ disk, no LUKS or LVM) with the default settings; host name and paths are generic
 Your system is based on: bios
 Your partition type for /dev/vda is: dos
 
-NDM Linux Backup 3.0.0 -- analysis for root@myhost (run --start to actually back up)
+NDM Linux Backup 3.0.1 -- analysis for root@myhost (run --start to actually back up)
 
 === SETTINGS ARCHIVE (always produced) ===
 Working directory (src): /home/ndm_linux-backup/ndm_linux-backup

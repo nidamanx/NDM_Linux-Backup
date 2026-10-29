@@ -15,7 +15,7 @@ authors:
 repository-code: "https://github.com/nidamanx/NDM_Linux-Backup"
 url: "https://github.com/nidamanx/NDM_Linux-Backup"
 license: AGPL-3.0-or-later
-version: "3.0.0"
+version: "3.0.1"
 date-released: "2026-10-29"
 keywords:
   - bash

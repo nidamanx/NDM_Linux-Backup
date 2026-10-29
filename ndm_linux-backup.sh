@@ -6,7 +6,7 @@ APP_DESCRIPTION="System backup and disaster recovery for Debian/GNU Linux: saves
 parts of a machine most backup tools leave out (hardware, boot, partitions, LUKS, LVM, \
 packages, databases, containers)."
 APP_AUTHOR="Nicola Davide Mannarelli (@nidamanx)"
-APP_VERSION="3.0.0"
+APP_VERSION="3.0.1"
 APP_RELEASE_DATE="2026-10-29"
 APP_COPYRIGHT="Copyright (C) 2020-2026 Nicola Davide Mannarelli (@nidamanx)"
 APP_LICENSE="AGPL-3.0-or-later"

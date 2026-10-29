@@ -7,6 +7,15 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-10-29
+
+### Changed
+
+- The long lines of the script are wrapped like in the other NDM projects; what it does
+  and every message it prints are unchanged.
+- README: the introduction names the main features (GRUB, MySQL/MariaDB, PostgreSQL,
+  Docker, Podman, GPG encryption, retention).
+
 ## [3.0.0] - 2026-10-29
 
 First release on GitHub. NDM Linux Backup is a rework of NDM Backup, published on GitLab
@@ -72,5 +81,6 @@ with the author's other projects. What gets backed up does not change.
 - The settings file can no longer run code as root: it was sourced as a Bash script, so
   anyone able to write to it could run any command at the next backup.
 
-[Unreleased]: https://github.com/nidamanx/NDM_Linux-Backup/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/nidamanx/NDM_Linux-Backup/compare/v3.0.1...HEAD
+[3.0.1]: https://github.com/nidamanx/NDM_Linux-Backup/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/nidamanx/NDM_Linux-Backup/releases/tag/v3.0.0
