@@ -7,15 +7,17 @@ v3+](https://img.shields.io/badge/License-AGPL_v3%2B-blue.svg)](LICENSE)
 ![Version](https://img.shields.io/badge/version-3.0.0-informational)
 ![Shell](https://img.shields.io/badge/shell-bash-4EAA25)
 
-**NDM Linux Backup** is a system backup and disaster-recovery script for Debian/GNU
-Linux: a single, self-contained Bash script that snapshots the parts of the machine you
-would actually need to rebuild or diagnose it, the ones most backup tools leave out:
-hardware, boot configuration (UEFI/BIOS/MBR), partition tables, LUKS, LVM, installed
-packages, crontabs, databases and container configuration. No dependencies beyond what
-`apt` can install: every setting lives in the script itself, in plain Bash, optionally
+**NDM Linux Backup** is a system backup and disaster recovery tool for Debian/GNU Linux
+servers and workstations. It saves the parts of a machine you need to rebuild or diagnose
+it, the ones most backup tools leave out: hardware inventory, boot setup (UEFI/BIOS/MBR,
+GRUB), partition tables, LUKS and LVM layout, installed packages, modified `/etc` files,
+crontabs, MySQL/MariaDB and PostgreSQL schemas, Docker and Podman configuration. GPG
+encryption and retention of old archives are built in.
+
+It is one Bash script with no extra libraries: it relies on standard Debian tools that
+`apt` can install, and runs as root. Every setting lives in the script itself, optionally
 overridden by a settings file of simple `KEY=value` lines that is only read, never
-executed (see [External settings file](#external-settings-file)), if you don't want to
-edit the script in place.
+executed (see [External settings file](#external-settings-file)).
 
 Each piece of the backup can be switched on or off individually (see
 [Configuration](#configuration)), so you can trim the script down to only what your

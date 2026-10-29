@@ -7,16 +7,19 @@ v3+](https://img.shields.io/badge/License-AGPL_v3%2B-blue.svg)](LICENSE)
 ![Version](https://img.shields.io/badge/version-3.0.0-informational)
 ![Shell](https://img.shields.io/badge/shell-bash-4EAA25)
 
-**NDM Linux Backup** è uno script di backup di sistema e disaster recovery per
-Debian/GNU Linux: un unico script Bash autonomo che fotografa le parti della macchina
-che servirebbero davvero per ricostruirla o diagnosticarla, quelle che la maggior parte
-dei software di backup trascura: hardware, configurazione di avvio (UEFI/BIOS/MBR),
-tabelle delle partizioni, LUKS, LVM, pacchetti installati, crontab, database e
-configurazione dei container. Nessuna dipendenza oltre a quanto `apt` può installare:
-ogni impostazione vive nello script stesso, in puro Bash, opzionalmente sovrascrivibile
-da un file di impostazioni fatto di semplici righe `KEY=value`, che viene solo letto e
-mai eseguito (vedi [File di impostazioni esterno](#file-di-impostazioni-esterno)), se
-non vuoi modificare lo script direttamente.
+**NDM Linux Backup** è uno strumento di backup di sistema e disaster recovery per server
+e workstation Debian/GNU Linux. Salva le parti di una macchina che servono per
+ricostruirla o diagnosticarla, quelle che la maggior parte dei software di backup
+trascura: inventario hardware, configurazione di avvio (UEFI/BIOS/MBR, GRUB), tabelle
+delle partizioni, struttura LUKS e LVM, pacchetti installati, file di `/etc` modificati,
+crontab, schemi dei database MySQL/MariaDB e PostgreSQL, configurazione di Docker e
+Podman. Cifratura GPG e retention dei vecchi archivi sono integrate.
+
+È un unico script Bash senza librerie aggiuntive: usa gli strumenti standard di Debian
+installabili con `apt` e gira come root. Ogni impostazione vive nello script stesso,
+opzionalmente sovrascrivibile da un file di impostazioni fatto di semplici righe
+`KEY=value`, che viene solo letto e mai eseguito (vedi
+[File di impostazioni esterno](#file-di-impostazioni-esterno)).
 
 Ogni singola parte del backup può essere attivata o disattivata individualmente (vedi
 [Configurazione](#configurazione)), così puoi ridurre lo script a produrre solo ciò di
